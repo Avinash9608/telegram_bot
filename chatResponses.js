@@ -236,117 +236,32 @@ function hasPredefinedResponse(userMessage, conversation) {
   return false;
 }
 
-// Generate contextual response based on user message and conversation history
+// Main response generator
 async function generateResponse(userId, userMessage, conversation) {
-  const lowerMessage = userMessage.toLowerCase();
-  const analysis = analyzeMessage(userMessage);
-  
-  // Add topics to conversation context
-  if (conversation) {
-    conversation.topics = [...new Set([...conversation.topics, ...analysis.topics])];
-  }
-  
-  // FIRST PRIORITY: Check if message matches predefined patterns
+  // Check for predefined response
   if (hasPredefinedResponse(userMessage, conversation)) {
-    console.log('📝 Using predefined response for:', userMessage);
-    
-    // Check for specific patterns first
-    if (messagePatterns.greetings.some(pattern => lowerMessage.includes(pattern))) {
-      return getRandomResponse(botPersonality.responses.greetings);
-    }
-    
-    if (messagePatterns.farewells.some(pattern => lowerMessage.includes(pattern))) {
-      const topics = conversation ? conversation.topics.join(', ') : 'everything';
-      return `👋 It was great chatting with you! I'll remember our conversation about ${topics}. Come back anytime! 🌟`;
-    }
-    
-    if (messagePatterns.thanks.some(pattern => lowerMessage.includes(pattern))) {
-      return getRandomResponse(botPersonality.responses.thanks);
-    }
-    
-    if (messagePatterns.questions.some(pattern => lowerMessage.includes(pattern))) {
-      const topics = conversation && conversation.topics.length > 0 ? conversation.topics.join(', ') : 'various topics';
-      return `🤖 I'm doing great! Thanks for asking. I've been enjoying our conversation about ${topics}. How about you? 😊`;
-    }
-    
-    if (messagePatterns.interests.some(pattern => lowerMessage.includes(pattern))) {
-      return `🤖 I'm really interested in ${botPersonality.interests.join(', ')}! I also love learning about new things from our conversations. What interests you the most? 🎯`;
-    }
-    
-    if (messagePatterns.jokes.some(pattern => lowerMessage.includes(pattern))) {
-      return getRandomResponse(botPersonality.responses.jokes);
-    }
-    
-    if (messagePatterns.memory.some(pattern => lowerMessage.includes(pattern))) {
-      const topics = conversation ? conversation.topics.join(', ') : 'various topics';
-      const count = conversation ? conversation.conversationCount : 0;
-      return `🤖 Yes! I remember we've been talking about ${topics}. We've had ${count} messages in our conversation so far! 🧠`;
-    }
-    
-    if (messagePatterns.help.some(pattern => lowerMessage.includes(pattern))) {
-      return `🤖 I can chat with you about anything! I remember our conversations and can discuss topics like ${botPersonality.interests.join(', ')}. I can also tell jokes, answer questions, and just be a friendly chat companion. What would you like to talk about? 💬`;
-    }
-    
-    // Topic-specific responses
-    for (const [topic, keywords] of Object.entries(topicKeywords)) {
-      if (keywords.some(keyword => lowerMessage.includes(keyword))) {
-        return getRandomResponse(topicResponses[topic]);
-      }
-    }
-    
-    // Question detection
-    if (userMessage.includes('?')) {
-      const responses = [
-        "That's a great question! 🤔 Let me think about that...",
-        "Interesting question! I'd love to hear your thoughts on this too.",
-        "That's something I've been wondering about too! What do you think?",
-        "Great question! It really makes you think, doesn't it?"
-      ];
-      return getRandomResponse(responses);
-    }
-    
-    // Default contextual responses (fallback)
-    const defaultResponses = [
-      `That's really interesting! Tell me more about that. 🤔`,
-      `I love how you think about things! What made you think of that? 💭`,
-      `That's a great point! I'd love to hear more of your thoughts on this. 👍`,
-      `You know, that reminds me of something... What's your take on this? 🎯`,
-      `That's fascinating! I'm curious to know more about your perspective. 🔍`,
-      `I really appreciate you sharing that with me! What else is on your mind? 💬`,
-      `That's such an interesting thought! How did you come to that conclusion? 🤔`,
-      `I love learning from our conversations! What else would you like to discuss? 📚`
-    ];
-    
-    return getRandomResponse(defaultResponses);
+    return getPredefinedResponse(userMessage, conversation);
   }
-  
-  // SECOND PRIORITY: If no predefined response, use Gemini AI
-  if (geminiService && geminiService.isGeminiAvailable()) {
-    console.log('🤖 Using Gemini AI for:', userMessage);
+
+  // Try Gemini for unknown questions
+  if (!geminiService) {
+    initializeGeminiService();
+  }
+  if (geminiService && geminiService.generateGeminiResponse) {
     try {
-      const geminiResponse = await geminiService.generateGeminiResponse(userMessage, conversation ? conversation.topics : null);
-      if (geminiResponse) {
-        return geminiResponse;
+      const geminiReply = await geminiService.generateGeminiResponse(userMessage, conversation.topics || []);
+      if (geminiReply && geminiReply.trim().length > 0) {
+        return geminiReply;
+      } else {
+        return "😅 Sorry, I couldn't think of a good reply right now (Gemini error).";
       }
-    } catch (error) {
-      console.error('❌ Gemini response generation failed:', error.message);
+    } catch (err) {
+      console.error('Gemini error:', err);
+      return "😅 Sorry, I couldn't think of a good reply right now (Gemini error).";
     }
   }
-  
-  // FINAL FALLBACK: If Gemini fails, use default response
-  console.log('🔄 Using fallback response for:', userMessage);
-  const fallbackResponses = [
-    `That's really interesting! Tell me more about that. 🤔`,
-    `I love how you think about things! What made you think of that? 💭`,
-    `That's a great point! I'd love to hear more of your thoughts on this. 👍`,
-    `You know, that reminds me of something... What's your take on this? 🎯`,
-    `That's fascinating! I'm curious to know more about your perspective. 🔍`,
-    `I really appreciate you sharing that with me! What else is on your mind? 💬`,
-    `That's such an interesting thought! How did you come to that conclusion? 🤔`,
-    `I love learning from our conversations! What else would you like to discuss? 📚`
-  ];
-  
-  return getRandomResponse(fallbackResponses);
+  // Fallback if Gemini is not available
+  return "😅 Sorry, I couldn't think of a good reply right now (AI unavailable).";
 }
 
 // Analyze message for topics and sentiment
