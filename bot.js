@@ -8,6 +8,8 @@ const {
   botPersonality 
 } = require('./chatResponses');
 const geminiService = require('./geminiService');
+const RSSParser = require('rss-parser');
+const fs = require('fs');
 
 // Get token from .env
 const token = process.env.BOT_TOKEN;
@@ -65,6 +67,44 @@ geminiService.initializeGemini();
 // Confirm bot is running
 console.log("🤖 Enhanced ChatBot with Gemini AI is running...");
 
+// Load last notified post link
+let lastNotified = '';
+try {
+  lastNotified = fs.readFileSync('last_blog.txt', 'utf8');
+} catch (e) { lastNotified = ''; }
+
+// Function to get all user chat IDs from conversationMemory
+function getAllUserChatIds() {
+  // conversationMemory is a Map of userId -> conversation
+  return Array.from(conversationMemory.keys());
+}
+
+// Function to check for new blog post and notify all users
+async function checkForNewBlogPost() {
+  try {
+    const feed = await parser.parseURL(FEED_URL);
+    if (feed.items && feed.items.length > 0) {
+      const latest = feed.items[0];
+      if (latest.link !== lastNotified) {
+        // Notify all users
+        const userIds = getAllUserChatIds();
+        userIds.forEach(chatId => {
+          bot.sendMessage(chatId, `🆕 New blog post published: *${latest.title}*
+${latest.link}`, { parse_mode: 'Markdown' });
+        });
+        // Save the latest link
+        fs.writeFileSync('last_blog.txt', latest.link);
+        lastNotified = latest.link;
+      }
+    }
+  } catch (err) {
+    console.error('Error checking blog RSS feed:', err);
+  }
+}
+
+// Check every hour (3600000 ms)
+setInterval(checkForNewBlogPost, 60 * 60 * 1000);
+
 // Handle /start command
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
@@ -75,6 +115,9 @@ bot.onText(/\/start/, (msg) => {
   initializeConversation(userId);
   
   const welcomeMessage = `👋 Hello, ${name}! Welcome to your AI ChatBot! 🤖
+
+Check out my developer blog for coding tutorials, tech guides, and more:
+https://avinashdevblog.blogspot.com
 
 I'm here to have meaningful conversations with you. I can:
 • Remember our chat history and context
@@ -108,6 +151,8 @@ bot.onText(/\/help/, (msg) => {
 /joke - Tell you a joke
 /topics - Show what we've discussed
 /ai - Check AI status
+/blog - Show all blog links
+/resources - Show all blog links
 
 **Smart Chat Features:**
 • **Memory**: I remember our conversations and topics
@@ -202,6 +247,43 @@ bot.onText(/\/ai/, (msg) => {
   } else {
     bot.sendMessage(chatId, `🤖 **AI Status: Inactive** ❌\n\nTo enable AI features, add your GEMINI_API_KEY to the .env file:\n\nGEMINI_API_KEY=your_api_key_here\n\nGet your API key from: https://makersuite.google.com/app/apikey`, { parse_mode: 'Markdown' });
   }
+});
+
+// Handle /blog command
+bot.onText(/\/blog/, (msg) => {
+  const chatId = msg.chat.id;
+  const blogLinks = [
+    'https://avinashdevblog.blogspot.com',
+    'https://avinashdevblog.blogspot.com/2025/06/how-to-build-telegram-bot-using-nodejs.html',
+    'https://avinashdevblog.blogspot.com/2025/06/building-simple-chatbot-with-google.html',
+    'https://avinashdevblog.blogspot.com/2025/06/firebase-authentication-starter-guide.html',
+    'https://avinashdevblog.blogspot.com/2025/06/how-to-set-up-firebase-with-web.html',
+    'https://avinashdevblog.blogspot.com/2025/06/how-to-download-private-zoom-meeting.html',
+    'https://avinashdevblog.blogspot.com/2025/06/how-i-learned-right-way-to-upload.html'
+  ];
+  bot.sendMessage(chatId, `Check out my developer blog and latest posts:\n\n${blogLinks.map(link => `- ${link}`).join('\n')}`);
+});
+
+// Handle /resources command
+bot.onText(/\/resources/, (msg) => {
+  const chatId = msg.chat.id;
+  const blogLinks = [
+    'https://avinashdevblog.blogspot.com',
+    'https://avinashdevblog.blogspot.com/2025/06/how-to-build-telegram-bot-using-nodejs.html',
+    'https://avinashdevblog.blogspot.com/2025/06/building-simple-chatbot-with-google.html',
+    'https://avinashdevblog.blogspot.com/2025/06/firebase-authentication-starter-guide.html',
+    'https://avinashdevblog.blogspot.com/2025/06/how-to-set-up-firebase-with-web.html',
+    'https://avinashdevblog.blogspot.com/2025/06/how-to-download-private-zoom-meeting.html',
+    'https://avinashdevblog.blogspot.com/2025/06/how-i-learned-right-way-to-upload.html'
+  ];
+  bot.sendMessage(chatId, `Here are some useful resources from my developer blog:\n\n${blogLinks.map(link => `- ${link}`).join('\n')}`);
+});
+
+// Handle /shareblog command
+bot.onText(/\/shareblog/, (msg) => {
+  const chatId = msg.chat.id;
+  const shareMessage = `🚀 Check out this awesome developer blog for coding tutorials, tech guides, and real-world solutions!\n\nhttps://avinashdevblog.blogspot.com\n\nFeel free to share this message with your friends and groups!`;
+  bot.sendMessage(chatId, shareMessage);
 });
 
 // Main conversation handler
