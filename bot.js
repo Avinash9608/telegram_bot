@@ -292,7 +292,7 @@ bot.on('message', async (msg) => {
   const userId = msg.from.id;
   const text = msg.text;
 
-  // Skip commands (they're handled separately)
+  if (!text || typeof text !== 'string') return;
   if (text.startsWith('/')) return;
 
   console.log(`💬 [${msg.from.username || msg.from.first_name}]: ${text}`);
