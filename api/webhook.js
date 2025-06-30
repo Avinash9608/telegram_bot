@@ -39,8 +39,12 @@ if (!global._telegramBot) {
           response = await geminiService.generateGeminiResponse(text);
         } catch (err) {
           console.error('Gemini error:', err);
-          response = "😅 Sorry, I couldn't think of a good reply right now (Gemini error).";
+          response = null;
         }
+      }
+      // Always send a valid fallback reply
+      if (!response || typeof response !== 'string' || !response.trim()) {
+        response = "😅 Sorry, I couldn't think of a good reply right now.";
       }
       console.log('About to send message:', response);
       await sendTelegramMessage(chatId, response);
