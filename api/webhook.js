@@ -28,10 +28,16 @@ if (!global._telegramBot) {
           response = "😅 Sorry, I couldn't think of a good reply right now (Gemini error).";
         }
       }
+      console.log('About to send message:', response);
       await bot.sendMessage(chatId, response);
+      console.log('Message sent to chatId:', chatId);
     } catch (err) {
       console.error('Error in message handler:', err);
-      await bot.sendMessage(chatId, 'Internal error: ' + err.message);
+      try {
+        await bot.sendMessage(chatId, 'Internal error: ' + err.message);
+      } catch (sendErr) {
+        console.error('Failed to send error message:', sendErr);
+      }
     }
   });
 } else {
