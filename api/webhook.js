@@ -1,3 +1,4 @@
+// Minimal working Telegram webhook for Vercel. Do not add custom functions here.
 const TelegramBot = require('node-telegram-bot-api');
 
 const token = process.env.BOT_TOKEN;
