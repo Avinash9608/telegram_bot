@@ -103,6 +103,7 @@ else {
 
 module.exports = async (req, res) => {
   if (req.method === 'POST') {
+    console.log('Received POST from Telegram');
     let body = req.body;
     // Parse body if not already parsed (Vercel does not auto-parse)
     if (!body || Object.keys(body).length === 0) {
@@ -112,7 +113,12 @@ module.exports = async (req, res) => {
         req.on('end', () => resolve(JSON.parse(data)));
       });
     }
-    await bot.processUpdate(body);
+    try {
+      await bot.processUpdate(body);
+      console.log('Processed update:', body);
+    } catch (err) {
+      console.error('Error processing update:', err, body);
+    }
     res.status(200).send('ok');
   } else {
     res.status(200).send('Hello from Telegram bot webhook!');
