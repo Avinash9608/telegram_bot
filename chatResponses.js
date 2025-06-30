@@ -389,6 +389,26 @@ function getTopicKeywords() {
   return topicKeywords;
 }
 
+// Conversation memory storage for serverless (in-memory, resets on cold start)
+const conversationMemory = new Map();
+
+// Initialize conversation for a user
+function initializeConversation(userId) {
+  if (!conversationMemory.has(userId)) {
+    conversationMemory.set(userId, {
+      messages: [],
+      context: [],
+      mood: "neutral",
+      topics: [],
+      lastActivity: Date.now(),
+      conversationCount: 0,
+      favoriteTopics: [],
+      userPreferences: {}
+    });
+  }
+  return conversationMemory.get(userId);
+}
+
 // Initialize Gemini service
 initializeGeminiService();
 
