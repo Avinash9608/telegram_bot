@@ -1,5 +1,7 @@
 // Minimal working Telegram webhook for Vercel. Do not add custom functions here.
 const TelegramBot = require('node-telegram-bot-api');
+const { generateResponse, hasPredefinedResponse, initializeConversation } = require('../chatResponses');
+const geminiService = require('../geminiService');
 
 const token = process.env.BOT_TOKEN;
 let bot;
@@ -8,9 +10,28 @@ if (!global._telegramBot) {
   bot = new TelegramBot(token, { webHook: true });
   global._telegramBot = bot;
 
-  bot.on('message', (msg) => {
+  bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
-    bot.sendMessage(chatId, 'Hello! This is a reply from the Vercel webhook.');
+    const userId = msg.from.id;
+    const text = msg.text;
+
+    // Initialize conversation memory if needed
+    const conversation = initializeConversation ? initializeConversation(userId) : null;
+
+    // Try to get a predefined response
+    let response;
+    if (hasPredefinedResponse && hasPredefinedResponse(text, conversation)) {
+      response = await generateResponse(userId, text, conversation);
+    } else {
+      // Fallback to Gemini AI
+      try {
+        response = await geminiService.generateGeminiResponse(text);
+      } catch (err) {
+        response = "😅 Sorry, I couldn't think of a good reply right now.";
+      }
+    }
+
+    bot.sendMessage(chatId, response);
   });
 } else {
   bot = global._telegramBot;
