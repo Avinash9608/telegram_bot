@@ -103,7 +103,16 @@ else {
 
 module.exports = async (req, res) => {
   if (req.method === 'POST') {
-    await bot.processUpdate(req.body);
+    let body = req.body;
+    // Parse body if not already parsed (Vercel does not auto-parse)
+    if (!body || Object.keys(body).length === 0) {
+      body = await new Promise((resolve) => {
+        let data = '';
+        req.on('data', chunk => { data += chunk; });
+        req.on('end', () => resolve(JSON.parse(data)));
+      });
+    }
+    await bot.processUpdate(body);
     res.status(200).send('ok');
   } else {
     res.status(200).send('Hello from Telegram bot webhook!');
