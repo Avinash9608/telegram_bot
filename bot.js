@@ -255,3 +255,16 @@ console.log('✅ Enhanced ChatBot with Gemini AI integration is ready!');
 console.log('💬 Features: Memory, Context, Personality, Smart Responses, AI Powered');
 console.log('📁 Response patterns loaded from chatResponses.js');
 console.log('🤖 Gemini AI integration loaded from geminiService.js');
+
+// Minimal Express server for Render.com free Web Service
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.send('Bot is running!');
+});
+
+app.listen(PORT, () => {
+  console.log(`Web server running on port ${PORT}`);
+});
