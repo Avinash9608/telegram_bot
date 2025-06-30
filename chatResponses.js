@@ -403,5 +403,6 @@ module.exports = {
   botPersonality,
   topicResponses,
   messagePatterns,
-  topicKeywords
+  topicKeywords,
+  initializeConversation
 }; 
