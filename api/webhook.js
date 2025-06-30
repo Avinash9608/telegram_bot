@@ -32,11 +32,15 @@ if (!global._telegramBot) {
     try {
       const conversation = initializeConversation ? initializeConversation(userId) : null;
       let response;
+      let usedGemini = false;
       if (hasPredefinedResponse && hasPredefinedResponse(text, conversation)) {
         response = await generateResponse(userId, text, conversation);
+        console.log('Reply source: chatResponses');
       } else {
         try {
-          response = await geminiService.generateGeminiResponse(text);
+          response = await geminiService.generateGeminiResponse(text, conversation ? conversation.topics : null);
+          usedGemini = true;
+          console.log('Reply source: Gemini');
         } catch (err) {
           console.error('Gemini error:', err);
           response = null;
@@ -44,7 +48,9 @@ if (!global._telegramBot) {
       }
       // Always send a valid fallback reply
       if (!response || typeof response !== 'string' || !response.trim()) {
-        response = "😅 Sorry, I couldn't think of a good reply right now.";
+        response = usedGemini
+          ? "😅 Sorry, I couldn't think of a good reply right now (Gemini error)."
+          : "😅 Sorry, I couldn't think of a good reply right now.";
       }
       console.log('About to send message:', response);
       await sendTelegramMessage(chatId, response);
