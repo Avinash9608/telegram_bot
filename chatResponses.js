@@ -183,6 +183,17 @@ function initializeGeminiService() {
   }
 }
 
+// Blog suggestion links
+const blogLinks = [
+  'https://avinashdevblog.blogspot.com',
+  'https://avinashdevblog.blogspot.com/2025/06/how-to-build-telegram-bot-using-nodejs.html',
+  'https://avinashdevblog.blogspot.com/2025/06/building-simple-chatbot-with-google.html',
+  'https://avinashdevblog.blogspot.com/2025/06/firebase-authentication-starter-guide.html',
+  'https://avinashdevblog.blogspot.com/2025/06/how-to-set-up-firebase-with-web.html',
+  'https://avinashdevblog.blogspot.com/2025/06/how-to-download-private-zoom-meeting.html',
+  'https://avinashdevblog.blogspot.com/2025/06/how-i-learned-right-way-to-upload.html'
+];
+
 // Check if message matches predefined patterns
 function hasPredefinedResponse(userMessage, conversation) {
   const lowerMessage = userMessage.toLowerCase();
@@ -238,6 +249,61 @@ function hasPredefinedResponse(userMessage, conversation) {
 
 // Main response generator
 async function generateResponse(userId, userMessage, conversation) {
+  // Blog/tech keyword detection
+  const blogKeywords = [
+    'blog', 'blogging', 'tech', 'developer', 'coding', 'programming', 'tutorial', 'guide',
+    'firebase', 'zoom', 'upload', 'github', 'nodejs', 'telegram', 'ai', 'gemini',
+    'authentication', 'web app', 'project', 'article', 'post', 'resource', 'learning', 'learn',
+    'how to', 'step-by-step', 'backend', 'frontend', 'javascript', 'replit', 'render', 'railway', 'fly.io',
+    'cloud', 'deployment', 'api', 'server', 'bot', 'chatbot', 'machine learning', 'ml', 'nlp', 'database',
+    'sql', 'nosql', 'json', 'rest', 'express', 'heroku', 'hosting', 'portfolio', 'internship', 'career',
+    'student', 'self-taught', 'open source', 'repository', 'commit', 'push', 'pull', 'merge', 'branch',
+    'issue', 'pull request', 'ci', 'cd', 'automation', 'debug', 'fix', 'error', 'solution', 'step',
+    'walkthrough', 'beginner', 'advanced', 'tips', 'tricks', 'best practices', 'how-to', 'fullstack',
+    'container', 'docker', 'kubernetes', 'virtual', 'linux', 'windows', 'mac', 'terminal', 'cli',
+    'command line', 'script', 'productivity', 'tools', 'resources', 'blogspot', 'blogger', 'writeup',
+    'write-up', 'documentation', 'readme', 'markdown', 'snippet', 'example', 'sample', 'template',
+    'explanation', 'explain', 'concept', 'architecture', 'design', 'pattern', 'system', 'scalable',
+    'scalability', 'performance', 'optimization', 'refactor', 'clean code', 'test', 'testing', 'unit test',
+    'integration test', 'e2e', 'end to end', 'mock', 'stub', 'assert', 'coverage', 'review', 'code review',
+    'contribute', 'contribution', 'collaborate', 'collaboration', 'team', 'agile', 'scrum', 'kanban',
+    'workflow', 'pipeline', 'ci/cd', 'continuous integration', 'continuous deployment', 'release', 'version',
+    'semver', 'semantic versioning', 'changelog', 'log', 'monitor', 'monitoring', 'alert', 'notification',
+    'email', 'sms', 'push notification', 'webhook', 'endpoint', 'request', 'response', 'status', 'exception',
+    'try', 'catch', 'throw', 'handle', 'handling', 'crash', 'bug', 'patch', 'update', 'upgrade', 'install',
+    'setup', 'configuration', 'config', 'env', 'environment', 'variable', 'secret', 'key', 'token', 'login',
+    'logout', 'register', 'signup', 'signin', 'user', 'account', 'profile', 'dashboard', 'admin', 'panel',
+    'console', 'ui', 'ux', 'interface', 'responsive', 'mobile', 'desktop', 'application', 'site', 'website',
+    'page', 'route', 'router', 'navigation', 'link', 'anchor', 'button', 'form', 'input', 'output', 'display',
+    'render', 'component', 'module', 'package', 'library', 'framework', 'dependency', 'npm', 'yarn', 'pnpm',
+    'build', 'compile', 'transpile', 'babel', 'webpack', 'vite', 'rollup', 'parcel', 'gulp', 'grunt', 'task',
+    'runner', 'utility', 'helper', 'function', 'method', 'class', 'object', 'array', 'list', 'map', 'set',
+    'queue', 'stack', 'tree', 'graph', 'algorithm', 'data structure', 'sort', 'search', 'filter', 'reduce',
+    'foreach', 'loop', 'iterate', 'recursion', 'recursive', 'base case', 'edge case', 'test case', 'assertion',
+    'expect', 'should', 'must', 'require', 'import', 'export', 'commonjs', 'esm', 'es6', 'es2015', 'typescript',
+    'ts', 'js', 'jsx', 'tsx', 'html', 'css', 'scss', 'sass', 'less', 'stylus', 'style', 'theme', 'color', 'font',
+    'icon', 'image', 'svg', 'canvas', 'animation', 'transition', 'effect', 'event', 'listener', 'handler',
+    'callback', 'promise', 'async', 'await', 'then', 'finally', 'resolve', 'reject', 'fatal', 'critical',
+    'chat', 'conversation', 'thread', 'reply', 'message', 'discussion', 'mention', 'reference', 'bookmark',
+    'favorite', 'star', 'like', 'dislike', 'vote', 'poll', 'survey', 'feedback', 'rate', 'rating', 'score',
+    'grade', 'level', 'stage', 'phase', 'boilerplate', 'starter', 'seed', 'scaffold', 'generator', 'make',
+    'develop', 'show', 'demonstrate', 'illustrate', 'visualize', 'draw', 'paint', 'sketch', 'diagram', 'chart',
+    'plot', 'table', 'describe', 'display', 'showcase', 'insight', 'insights', 'explore', 'exploring', 'discover',
+    'discovery', 'journey', 'experience', 'experiences', 'story', 'stories', 'case study', 'case studies', 'problem',
+    'problems', 'solution', 'solutions', 'fix', 'fixes', 'troubleshoot', 'troubleshooting', 'how', 'why', 'what',
+    'when', 'where', 'who', 'which', 'whom', 'whose', 'whenever', 'wherever', 'however', 'whichever', 'whatever',
+    'whomever', 'whosoever', 'whoso', 'whomsoever', 'whensoever', 'whithersoever', 'whencesoever', 'whitherso',
+    'whenceso', 'whithersoever', 'whencesoever', 'whitherso', 'whenceso', 'whithersoever', 'whencesoever',
+    'whitherso', 'whenceso', 'whithersoever', 'whencesoever', 'whitherso', 'whenceso', 'whithersoever',
+    'whencesoever', 'whitherso', 'whenceso', 'whithersoever', 'whencesoever', 'whitherso', 'whenceso'
+  ];
+  const lowerMessage = userMessage.toLowerCase();
+  if (blogKeywords.some(keyword => lowerMessage.includes(keyword))) {
+    return `If you're interested in tech, coding, or blogging, check out my developer blog: Avinash Dev Blog!
+
+${blogLinks.map(link => `- ${link}`).join('\n')}`;
+  }
+
   // Check for predefined response
   if (hasPredefinedResponse(userMessage, conversation)) {
     return getPredefinedResponse(userMessage, conversation);
