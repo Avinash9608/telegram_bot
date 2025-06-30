@@ -1,10 +1,24 @@
 // Minimal working Telegram webhook for Vercel. Do not add custom functions here.
 const TelegramBot = require('node-telegram-bot-api');
+const fetch = require('node-fetch');
 const { generateResponse, hasPredefinedResponse, initializeConversation } = require('../chatResponses');
 const geminiService = require('../geminiService');
 
 const token = process.env.BOT_TOKEN;
 let bot;
+
+async function sendTelegramMessage(chatId, text) {
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text })
+  });
+  const data = await res.json();
+  if (!data.ok) {
+    throw new Error('Telegram API error: ' + JSON.stringify(data));
+  }
+}
 
 if (!global._telegramBot) {
   bot = new TelegramBot(token, { webHook: true });
@@ -29,12 +43,12 @@ if (!global._telegramBot) {
         }
       }
       console.log('About to send message:', response);
-      await bot.sendMessage(chatId, response);
+      await sendTelegramMessage(chatId, response);
       console.log('Message sent to chatId:', chatId);
     } catch (err) {
       console.error('Error in message handler:', err);
       try {
-        await bot.sendMessage(chatId, 'Internal error: ' + err.message);
+        await sendTelegramMessage(chatId, 'Internal error: ' + err.message);
       } catch (sendErr) {
         console.error('Failed to send error message:', sendErr);
       }
