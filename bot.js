@@ -1,3 +1,4 @@
+// NOTE: For Vercel deployment, use api/webhook.js and webhooks. This file uses polling and is not suitable for Vercel.
 require('dotenv').config(); // Load environment variables
 const TelegramBot = require('node-telegram-bot-api');
 const { 
