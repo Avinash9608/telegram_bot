@@ -15,23 +15,24 @@ if (!global._telegramBot) {
     const userId = msg.from.id;
     const text = msg.text;
 
-    // Initialize conversation memory if needed
-    const conversation = initializeConversation ? initializeConversation(userId) : null;
-
-    // Try to get a predefined response
-    let response;
-    if (hasPredefinedResponse && hasPredefinedResponse(text, conversation)) {
-      response = await generateResponse(userId, text, conversation);
-    } else {
-      // Fallback to Gemini AI
-      try {
-        response = await geminiService.generateGeminiResponse(text);
-      } catch (err) {
-        response = "😅 Sorry, I couldn't think of a good reply right now.";
+    try {
+      const conversation = initializeConversation ? initializeConversation(userId) : null;
+      let response;
+      if (hasPredefinedResponse && hasPredefinedResponse(text, conversation)) {
+        response = await generateResponse(userId, text, conversation);
+      } else {
+        try {
+          response = await geminiService.generateGeminiResponse(text);
+        } catch (err) {
+          console.error('Gemini error:', err);
+          response = "😅 Sorry, I couldn't think of a good reply right now (Gemini error).";
+        }
       }
+      await bot.sendMessage(chatId, response);
+    } catch (err) {
+      console.error('Error in message handler:', err);
+      await bot.sendMessage(chatId, 'Internal error: ' + err.message);
     }
-
-    bot.sendMessage(chatId, response);
   });
 } else {
   bot = global._telegramBot;
